@@ -1,7 +1,7 @@
 const auth = require('../middleware/auth')
 const express = require('express')
 const openai = require('openai');
-const apiKey = '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'
+const apiKey = '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'
 const axios = require('axios');
 
 
