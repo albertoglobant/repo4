@@ -1,7 +1,8 @@
 const auth = require('../middleware/auth')
 const express = require('express')
 const openai = require('openai');
-const apiKey = process.env.REACT_APP_OPEN_AI_KEY
+//const apiKey = process.env.REACT_APP_OPEN_AI_KEY
+const apiKey = "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"
 const axios = require('axios');
 
 
@@ -173,6 +174,61 @@ router.get('/chatgpt2', async(req, res)=>{
         console.log(e);
         return res.status(400).send(["error", "We can not release your booking"])
     }
+    
+})
+
+router.post('/proxyjira', async(req, res)=>{
+  try{
+    
+    console.log("proxiy");
+
+    const jiraMessage2 = req.body
+    
+    const BASE_URL = 'https://alexgptplusplus.atlassian.net/rest/api/2/issue/'
+    console.log(BASE_URL);
+  
+        clientJira.post(BASE_URL, jiraMessage2)
+        .then(result => {
+          console.log("me llamo alberto333333");
+          console.log(result.data);
+          res.status(200).send(result.data)
+      }).catch(err => {
+          console.log("fallo proxi jira");
+          console.log(err);
+      });
+
+    }catch(e){
+      console.log(e);
+      return res.status(400).send(["error", "proxi jira fallo"])
+  }
+    
+})
+
+router.post('/proxychat', async(req, res)=>{
+  try{
+    
+    console.log("proxchat");
+
+    const messageChat = req.body
+
+    client.post('https://api.openai.com/v1/chat/completions', messageChat)
+      .then(result => {
+
+        console.log("me llamo alberto3");
+        console.log(result.data.choices[0].message.content);
+        
+        res.status(200).send(result.data)
+        
+        
+      }).catch(err => {
+          console.log("fallo proxi chat");
+          console.log(err);
+      });
+
+    }catch(e){
+      console.log(e);
+      return res.status(400).send(["error", "proxi chat"])
+  }
     
 })
 module.exports = router
