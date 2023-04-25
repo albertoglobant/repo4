@@ -416,7 +416,7 @@ router.post('/proxychatgptwithscenario', async(req, res)=>{
                 },
                 "parent":
                 {
-                    "key": req.body.parentIssuekey
+                    "key": req.body.parentIssueKey
                 },
                 "summary": subTaskTitle,
                 "description": result.data.choices[0].message.content,
