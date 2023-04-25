@@ -1,7 +1,7 @@
 const auth = require('../middleware/auth')
 const express = require('express')
 const openai = require('openai');
-const apiKey = process.env.REACT_APP_OPEN_AI_KEY
+const apiKey = process.env.REACT_APP_OPEN_AI_KEY || "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"
 
 const axios = require('axios');
 
@@ -204,6 +204,55 @@ router.post('/proxyjira', async(req, res)=>{
     
 })
 
+
+
+
+router.post('/proxyjiracreatesubtaskforanissue', async(req, res)=>{
+  try{
+
+    const jiraRequestBody = {
+      "fields":
+      {
+          "project":
+          {
+              "key": req.body.projectkey
+          },
+          "parent":
+          {
+              "key": req.body.parentIssuekey
+          },
+          "summary": req.body.summary,
+          "description": req.body.description,
+          "issuetype":
+          {
+              "id": "10005"
+          }
+      }
+  }
+
+
+    
+    console.log("proxyjiracreatetestcase");
+    console.log(jiraRequestBody);
+
+    const jiraMessage2 = jiraRequestBody
+    
+    const BASE_URL = 'https://alexgptplusplus.atlassian.net/rest/api/2/issue/'
+    console.log(BASE_URL);
+        clientJira.post(BASE_URL, jiraMessage2)
+        .then(result => {
+          res.status(200).send(result.data)
+      }).catch(err => {
+          console.log(err);
+      });
+
+    }catch(e){
+      console.log(e);
+      return res.status(400).send(["error", "proxi jira fallo"])
+  }
+    
+})
+
 router.post('/proxychat', async(req, res)=>{
   try{
     
@@ -216,6 +265,190 @@ router.post('/proxychat', async(req, res)=>{
 
         console.log("me llamo alberto3");
         console.log(result.data.choices[0].message.content);
+        
+        res.status(200).send(result.data)
+        
+        
+      }).catch(err => {
+          console.log("fallo proxi chat");
+          console.log(err);
+      });
+
+    }catch(e){
+      console.log(e);
+      return res.status(400).send(["error", "proxi chat"])
+  }
+    
+})
+
+
+router.post('/proxychatgptcreatemanualtestcase', async(req, res)=>{
+  try{
+    
+    console.log("proxchat");
+
+    const messageChat = {
+      "model":"gpt-3.5-turbo",
+      "messages":[
+         {
+            "content":"create the manual test case with steps to follow for the next scenario, only send the steps for the manual test cases nothing else",
+            "role":"system"
+         },
+         {
+            "content":req.body.description,
+            "role":"user"
+         }
+       ]
+    }
+
+    client.post('https://api.openai.com/v1/chat/completions', messageChat)
+      .then(result => {
+
+        console.log("me llamo alberto3");
+        console.log(result.data.choices[0].message.content);
+        
+        res.status(200).send(result.data)
+        
+        
+      }).catch(err => {
+          console.log("fallo proxi chat");
+          console.log(err);
+      });
+
+    }catch(e){
+      console.log(e);
+      return res.status(400).send(["error", "proxi chat"])
+  }
+    
+})
+
+
+
+/*
+ASK TO CHATGPT FOR MANUAL TEST CASES UI, CODE AND MORE
+*/
+
+router.post('/proxychatgptwithscenario', async(req, res)=>{
+  try{
+    
+    console.log("proxychatgptwithscenario");
+    var contentMessage = ""
+    var subTaskTitle = ""
+
+    switch (req.body.type) {
+      case 'MANUAL_TEST_CASE':
+        console.log('MANUAL_TEST_CASE');
+        contentMessage = 'Respond as if you were a Manual Tester for Web application. Create the manual test case with "Steps to follow" for the next scenario. Send only the test case, nothing else"'
+        subTaskTitle = "Manual Test Case for " + req.body.summary
+        break;
+
+      case 'ACCEPTANCE_CRITERIA':
+        console.log('ACCEPTANCE_CRITERIA');
+        contentMessage = 'Respond as if you were a Product Owner for Web application. Create the Acceptance criteria using Gherking for the next Scenario. Send only the test case, nothing else"'
+        subTaskTitle = "Scenario for " + req.body.summary
+        break;
+
+      case 'CODE_AND_UNIT_TEST':
+        console.log('CODE_AND_UNIT_TEST');
+        contentMessage = 'Respond as if you were a React Web Developer for Web application. Create the code and unit test for the next Scenario. Send only the test case, nothing else"'
+        subTaskTitle = "Code and Unit Test for " + req.body.summary
+        break;
+
+      case 'UNHAPPY_PATH':
+        console.log('UNHAPPY_PATH');
+        contentMessage = 'Respond as if you were a Manual Tester for Web application. Create the manual test case with "Steps to follow" for the next scenario. Send only the test case, nothing else"'
+        subTaskTitle = "Unhappy path for " + req.body.summary
+        break;
+
+      case 'LANGUAGE_TRANSLATOR':
+        console.log('LANGUAGE_TRANSLATOR');
+        contentMessage = 'Respond as if you were a translatorn. Translate the next to Spanish and German. Send the response in this format, nothing else: English: Spanish: German:"'
+        subTaskTitle = "Labels path for " + req.body.summary
+        break;
+
+
+
+
+      case 'UI_UX':
+        console.log('UI_UX');
+        contentMessage = 'UI_UX'
+        break;
+      default:
+    }
+
+    var contentMessageSummmaryDescription = req.body.summary + " : " + req.body.description
+    console.log('MANUAL_TEST_CASE');
+
+    const messageChat = {
+      "model":"gpt-3.5-turbo",
+      "messages":[
+         {
+            "content": contentMessage,
+            "role":"system"
+         },
+         {
+            "content":contentMessageSummmaryDescription,
+            "role":"user"
+         }
+       ]
+    }
+
+    client.post('https://api.openai.com/v1/chat/completions', messageChat)
+      .then(result => {
+
+        console.log("me llamo alberto3");
+        console.log(result.data.choices[0].message.content);
+
+
+
+        //Subir subtask a Jira
+        try{
+
+
+          
+
+          const jiraRequestBody = {
+            "fields":
+            {
+                "project":
+                {
+                    "key": req.body.projectkey
+                },
+                "parent":
+                {
+                    "key": req.body.parentIssuekey
+                },
+                "summary": subTaskTitle,
+                "description": result.data.choices[0].message.content,
+                "issuetype":
+                {
+                    "id": "10005"
+                }
+            }
+        }
+      
+      
+          
+          console.log("proxyjiracreatetestcase");
+          console.log(jiraRequestBody);
+      
+          const jiraMessage2 = jiraRequestBody
+          
+          const BASE_URL = 'https://alexgptplusplus.atlassian.net/rest/api/2/issue/'
+          console.log(BASE_URL);
+              clientJira.post(BASE_URL, jiraMessage2)
+              .then(result => {
+               // res.status(200).send(result.data)
+            }).catch(err => {
+                console.log(err);
+            });
+      
+          }catch(e){
+            console.log(e);
+            return res.status(400).send(["error", "proxi jira fallo"])
+        }
+
+
         
         res.status(200).send(result.data)
         
